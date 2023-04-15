@@ -13,5 +13,5 @@ const testCases = testGenerator.generateTestCases(codeSections);
 console.log(`Generated test cases for the file '${filePath}':\n${testCases}`);
 
 const outputFilePath = './src/sample.test.ts';
-testGenerator.saveTestCasesToFile(testCases, outputFilePath);
+testGenerator.saveTestCasesToFile(testCases, filePath, outputFilePath, codeSections);
 console.log(`Test cases saved to '${outputFilePath}'.`);

@@ -16,35 +16,43 @@ class CodeAnalyzer {
       true
     );
   }
-
   public analyze(): CodeSection[] {
     const codeSections: CodeSection[] = [];
     const visit = (node: ts.Node): void => {
       if (
         ts.isFunctionDeclaration(node) ||
         ts.isMethodDeclaration(node) ||
-        ts.isArrowFunction(node)
+        ts.isArrowFunction(node) ||
+        ts.isClassDeclaration(node)
       ) {
         const name = this.extractName(node);
-        codeSections.push({ name, node });
+        if (name) {
+          codeSections.push({ name, node });
+        }
       }
       ts.forEachChild(node, visit);
     };
-
+  
     visit(this.sourceFile);
     return codeSections;
   }
 
-  private extractName(node: ts.Node): string {
-    if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) {
-      return node.name ? node.name.getText(this.sourceFile) : 'Anonymous Function';
-    } else if (ts.isArrowFunction(node)) {
-      const variableDeclaration = node.parent as ts.VariableDeclaration;
-      return variableDeclaration.name.getText(this.sourceFile);
-    } else {
-      return 'Unknown';
+  private extractName(node: ts.FunctionDeclaration | ts.MethodDeclaration | ts.ArrowFunction | ts.ClassDeclaration): string | null {
+    if (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) {
+      return node.name?.text || null;
     }
+    if (ts.isMethodDeclaration(node)) {
+      return (node.name as ts.Identifier).text;
+    }
+    if (ts.isArrowFunction(node)) {
+      const variableDeclaration = node.parent;
+      if (ts.isVariableDeclaration(variableDeclaration)) {
+        return variableDeclaration.name.getText();
+      }
+    }
+    return null;
   }
+  
 }
 
 export default CodeAnalyzer;

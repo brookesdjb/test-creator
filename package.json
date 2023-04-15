@@ -8,14 +8,13 @@
     "test-file-reader": "ts-node src/testFileReader.ts",
     "test-code-analyzer": "ts-node src/testCodeAnalyzer.ts",
     "test-test-generator": "ts-node src/testTestGenerator.ts"
-
-
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "yargs": "^17.7.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
