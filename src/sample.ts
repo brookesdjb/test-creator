@@ -2,6 +2,11 @@
 export function add(a: number, b: number): number {
   return a + b;
 }
+
+export function stringBuilder(a: number, b: string): string {
+  return a + b;
+}
+
 export enum Gender{
   Male,
   Female,

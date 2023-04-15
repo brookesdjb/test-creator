@@ -12,32 +12,10 @@ class TestGenerator {
       if (ts.isEnumDeclaration(section.node)) {
         testCase = this.generateEnumTestCase(functionName, section.node);
       } else {
-      const sampleInputs = this.generateSampleInputs(section.node);
-      let methodCall: string;
-  
-      if (ts.isClassDeclaration(section.node)) {
-        methodCall = `const instance = new ${functionName}(${sampleInputs});\n    expect(instance).toBeInstanceOf(${functionName});`;
-      } else if (ts.isMethodDeclaration(section.node)) {
-        const className = codeAnalyzer.getClassName(section.node);
-        if (className) {
-          methodCall = `const instance = new ${className}();\n    expect(instance.${functionName}(${sampleInputs})).toBe('// add expected output here//');`;
-        } else {
-          methodCall = `expect(${functionName}(${sampleInputs})).toBe('// add expected output here//');`;
-        }
-      } else {
-        methodCall = `expect(${functionName}(${sampleInputs})).toBe('// add expected output here//');`;
+        const inputScenarios = this.getInputScenarios(section.node);
+        testCase = this.generateFunctionTestCases(functionName, codeAnalyzer, inputScenarios, section.node);
       }
-  
-       testCase = `
-  describe('${functionName}', () => {
-    it('should pass a sample test case', () => {
-      ${methodCall}
-    });
-  
-    // TODO: Add more test cases for '${functionName}'
-  });
-  `;
-}
+      
       testCases += testCase;
     });
   
@@ -48,6 +26,108 @@ class TestGenerator {
   
   
 
+  private generateFunctionTestCases(
+    functionName: string,
+    codeAnalyzer: CodeAnalyzer,
+    inputScenarios: any[][],
+    node: ts.Node
+  ): string {
+    const scenarios = inputScenarios.map((inputs, index) => {
+      const inputsString = inputs
+      .map((input) => (typeof input === 'object' ? JSON.stringify(input) : (typeof input === 'string' ? `'${input}'` : input)))
+      .join(', ');
+      let methodCall: string;
+  
+      if (ts.isClassDeclaration(node)) {
+        methodCall = `const instance = new ${functionName}(${inputsString});\n    expect(instance).toBeInstanceOf(${functionName});`;
+      } else if (ts.isMethodDeclaration(node)) {
+        const className = codeAnalyzer.getClassName(node);
+        if (className) {
+          methodCall = `const instance = new ${className}();\n    expect(instance.${functionName}(${inputsString})).toBe('// add expected output here//');`;
+        } else {
+          methodCall = `expect(${functionName}(${inputsString})).toBe('// add expected output here//');`;
+        }
+      } else {
+        methodCall = `expect(${functionName}(${inputsString})).toBe('// add expected output here//');`;
+      }
+  
+      return `
+    it('should pass test case ${index + 1}', () => {
+      ${methodCall}
+    });`;
+    });
+  
+    return `
+  describe('${functionName}', () => {
+    ${scenarios.join('\n')}
+    // TODO: Add more test cases for '${functionName}'
+  });
+  `;
+  }
+  
+
+  private getInputScenarios(node: ts.Node): any[][] {
+    if (
+      !(
+        ts.isFunctionDeclaration(node) ||
+        ts.isMethodDeclaration(node) ||
+        ts.isArrowFunction(node)
+      )
+    ) {
+      return [[]];
+    }
+  
+    const scenarios: any[][] = [];
+  
+    node.parameters.forEach((param) => {
+      const paramType = param.type;
+      if (paramType) {
+        if (paramType.kind === ts.SyntaxKind.NumberKeyword) {
+          scenarios.push([0, 1, Number.MAX_VALUE, Number.MIN_VALUE]);
+        } else if (paramType.kind === ts.SyntaxKind.StringKeyword) {
+          scenarios.push(['', 'sample', 'another sample']);
+        } else if (paramType.kind === ts.SyntaxKind.BooleanKeyword) {
+          scenarios.push([true, false]);
+        } else if (ts.isTypeReferenceNode(paramType)) {
+          const typeName = paramType.typeName.getText();
+          scenarios.push(this.generateObjectScenarios(typeName));
+        } else if (ts.isTypeLiteralNode(paramType)) {
+          scenarios.push([{}, { prop: 'value' }]);
+        }
+      } else {
+        scenarios.push([null]);
+      }
+    });
+  
+    return this.generateCartesianProduct(scenarios);
+  }
+  
+  private generateObjectScenarios(typeName: string): any[] {
+    // Customize this function to generate input scenarios for custom types.
+    switch (typeName) {
+      case 'User':
+        return [
+          { id: 1, name: 'John Doe', email: 'john.doe@example.com' },
+          { id: 2, name: 'Jane Doe', email: 'jane.doe@example.com' },
+        ];
+      case 'Point':
+        return [
+          { x: 0, y: 0 },
+          { x: 10, y: 20 },
+        ];
+      default:
+        return [{}];
+    }
+  }
+  
+  private generateCartesianProduct(arrays: any[][]): any[][] {
+    return arrays.reduce(
+      (acc, array) =>
+        acc.flatMap((x) => array.map((y) => x.concat(y))),
+      [[]]
+    );
+  }
+  
 public saveTestCasesToFile(testCases: string, sourceFilePath: string, outputFilePath: string, codeSections: CodeSection[]): void {
   const imports = this.extractExports(codeSections).join(', ');
   const fileHeader = `
