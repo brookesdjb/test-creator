@@ -13,7 +13,8 @@ import { add, Calculator } from './../src/sample';
   
   describe('Calculator', () => {
     it('should pass a sample test case', () => {
-      expect(Calculator()).toBe('// add expected output here//');
+      const instance = new Calculator();
+    expect(instance).toBeInstanceOf(Calculator);
     });
   
     // TODO: Add more test cases for 'Calculator'

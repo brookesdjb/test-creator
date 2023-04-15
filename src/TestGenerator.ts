@@ -10,7 +10,9 @@ class TestGenerator {
       const sampleInputs = this.generateSampleInputs(section.node);
       let methodCall: string;
   
-      if (ts.isMethodDeclaration(section.node)) {
+      if (ts.isClassDeclaration(section.node)) {
+        methodCall = `const instance = new ${functionName}(${sampleInputs});\n    expect(instance).toBeInstanceOf(${functionName});`;
+      } else if (ts.isMethodDeclaration(section.node)) {
         const className = codeAnalyzer.getClassName(section.node);
         if (className) {
           methodCall = `const instance = new ${className}();\n    expect(instance.${functionName}(${sampleInputs})).toBe('// add expected output here//');`;
@@ -35,6 +37,7 @@ class TestGenerator {
   
     return testCases;
   }
+  
   
   
   
