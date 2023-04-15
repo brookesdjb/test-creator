@@ -2,7 +2,12 @@
 export function add(a: number, b: number): number {
   return a + b;
 }
+export enum Gender{
+  Male,
+  Female,
+  Other
 
+}
 interface User{
   name: string;
   id :   number;

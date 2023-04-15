@@ -7,6 +7,11 @@ class TestGenerator {
   
     codeSections.forEach((section) => {
       const functionName = section.name;
+      let testCase: string;
+
+      if (ts.isEnumDeclaration(section.node)) {
+        testCase = this.generateEnumTestCase(functionName, section.node);
+      } else {
       const sampleInputs = this.generateSampleInputs(section.node);
       let methodCall: string;
   
@@ -23,7 +28,7 @@ class TestGenerator {
         methodCall = `expect(${functionName}(${sampleInputs})).toBe('// add expected output here//');`;
       }
   
-      const testCase = `
+       testCase = `
   describe('${functionName}', () => {
     it('should pass a sample test case', () => {
       ${methodCall}
@@ -32,6 +37,7 @@ class TestGenerator {
     // TODO: Add more test cases for '${functionName}'
   });
   `;
+}
       testCases += testCase;
     });
   
@@ -56,8 +62,12 @@ import { ${imports} } from './${this.getRelativeImportPath(sourceFilePath, outpu
 private extractExports(codeSections: CodeSection[]): string[] {
   const exports: string[] = [];
   codeSections.forEach((section) => {
-    // Only include top-level functions and classes in the imports
-    if (ts.isFunctionDeclaration(section.node) || ts.isClassDeclaration(section.node)) {
+    // Include enums in the imports, along with functions and classes
+    if (
+      ts.isFunctionDeclaration(section.node) ||
+      ts.isClassDeclaration(section.node) ||
+      ts.isEnumDeclaration(section.node)
+    ) {
       exports.push(section.name);
     }
   });
@@ -104,7 +114,22 @@ private generateSampleInputs(node: ts.Node): string {
 
   return params.join(', ');
 }
+private generateEnumTestCase(enumName: string, enumNode: ts.EnumDeclaration): string {
+  const enumValues = enumNode.members
+    .map((member) => `${enumName}.${member.name.getText()}`)
+    .join(', ');
 
+  return `
+describe('${enumName}', () => {
+  it('should have the expected enum values', () => {
+    const expectedValues = [${enumValues}];
+    expect(Object.values(${enumName})).toEqual(expectedValues);
+  });
+
+  // TODO: Add more test cases for '${enumName}'
+});
+`;
+}
 private generateSampleObject(typeName: string): string {
   // You can customize this function to generate sample objects based on type names.
   // The sample code below demonstrates generating objects for some custom types.

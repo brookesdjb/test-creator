@@ -1,5 +1,5 @@
 
-import { add, getUserId, Calculator } from './../src/sample';
+import { add, Gender, getUserId, Calculator } from './../src/sample';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
@@ -11,6 +11,15 @@ import { add, getUserId, Calculator } from './../src/sample';
     // TODO: Add more test cases for 'add'
   });
   
+describe('Gender', () => {
+  it('should have the expected enum values', () => {
+    const expectedValues = [Gender.Male, Gender.Female, Gender.Other];
+    expect(Object.values(Gender)).toEqual(expectedValues);
+  });
+
+  // TODO: Add more test cases for 'Gender'
+});
+
   describe('getUserId', () => {
     it('should pass a sample test case', () => {
       expect(getUserId({ id: 1, name: 'John Doe', email: 'john.doe@example.com' })).toBe('// add expected output here//');

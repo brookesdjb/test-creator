@@ -23,7 +23,8 @@ class CodeAnalyzer {
         ts.isFunctionDeclaration(node) ||
         ts.isMethodDeclaration(node) ||
         ts.isArrowFunction(node) ||
-        ts.isClassDeclaration(node)
+        ts.isClassDeclaration(node) ||
+        ts.isEnumDeclaration(node) // Add support for enums
       ) {
         const name = this.extractName(node);
         if (name) {
@@ -37,12 +38,22 @@ class CodeAnalyzer {
     return codeSections;
   }
 
-  private extractName(node: ts.FunctionDeclaration | ts.MethodDeclaration | ts.ArrowFunction | ts.ClassDeclaration): string | null {
-    if (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) {
+  private extractName(
+    node:
+      | ts.FunctionDeclaration
+      | ts.MethodDeclaration
+      | ts.ArrowFunction
+      | ts.ClassDeclaration
+      | ts.EnumDeclaration // Add EnumDeclaration
+  ): string | null {
+        if (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) {
       return node.name?.text || null;
     }
     if (ts.isMethodDeclaration(node)) {
       return (node.name as ts.Identifier).text;
+    }
+    if (ts.isEnumDeclaration(node)) {
+      return node.name.text;
     }
     if (ts.isArrowFunction(node)) {
       const variableDeclaration = node.parent;
