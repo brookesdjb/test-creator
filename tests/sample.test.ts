@@ -1,5 +1,5 @@
 
-import { add, Calculator } from './../src/sample';
+import { add, getUserId, Calculator } from './../src/sample';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
@@ -9,6 +9,14 @@ import { add, Calculator } from './../src/sample';
     });
   
     // TODO: Add more test cases for 'add'
+  });
+  
+  describe('getUserId', () => {
+    it('should pass a sample test case', () => {
+      expect(getUserId({ id: 1, name: 'John Doe', email: 'john.doe@example.com' })).toBe('// add expected output here//');
+    });
+  
+    // TODO: Add more test cases for 'getUserId'
   });
   
   describe('Calculator', () => {

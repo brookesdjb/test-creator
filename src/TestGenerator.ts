@@ -72,6 +72,8 @@ private getRelativeImportPath(sourceFilePath: string, outputFilePath: string): s
   const importPath = require('path').join(relativePath, sourceFileBaseName);
   return importPath.replace(/\\/g, '/');
 }
+
+
 private generateSampleInputs(node: ts.Node): string {
   if (
     !(
@@ -92,6 +94,9 @@ private generateSampleInputs(node: ts.Node): string {
         return "'sample'";
       } else if (paramType.kind === ts.SyntaxKind.BooleanKeyword) {
         return 'true';
+      } else if (ts.isTypeReferenceNode(paramType)) {
+        const typeName = paramType.typeName.getText();
+        return this.generateSampleObject(typeName);
       }
     }
     return 'null';
@@ -100,9 +105,18 @@ private generateSampleInputs(node: ts.Node): string {
   return params.join(', ');
 }
 
-
-
-
+private generateSampleObject(typeName: string): string {
+  // You can customize this function to generate sample objects based on type names.
+  // The sample code below demonstrates generating objects for some custom types.
+  switch (typeName) {
+    case 'User':
+      return `{ id: 1, name: 'John Doe', email: 'john.doe@example.com' }`;
+    case 'Point':
+      return `{ x: 10, y: 20 }`;
+    default:
+      return '{}';
+  }
+}
 
 }
 

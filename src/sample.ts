@@ -3,6 +3,15 @@ export function add(a: number, b: number): number {
   return a + b;
 }
 
+interface User{
+  name: string;
+  id :   number;
+  email: string;
+}
+const users: User[] = []
+export function getUserId(user: User ): number {
+return user.id;
+};
 export class Calculator {
   public multiply(a: number, b: number): number {
     return a * b;
