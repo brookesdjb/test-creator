@@ -52,7 +52,13 @@ class CodeAnalyzer {
     }
     return null;
   }
-  
+  public getClassName(node: ts.MethodDeclaration): string | null {
+    const classDeclaration = node.parent;
+    if (ts.isClassDeclaration(classDeclaration)) {
+      return classDeclaration.name?.text || null;
+    }
+    return null;
+  }
 }
 
 export default CodeAnalyzer;

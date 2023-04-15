@@ -3,29 +3,28 @@ import { add, Calculator } from './../src/sample';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-describe('add', () => {
-  it('should pass a sample test case', () => {
-    expect(true).toBe(true);
-    expect(add(1, 2)).toBe(3);
-
+  describe('add', () => {
+    it('should pass a sample test case', () => {
+      expect(add(1, 1)).toBe('// add expected output here//');
+    });
+  
+    // TODO: Add more test cases for 'add'
   });
-
-  // TODO: Add more test cases for 'add'
-});
-
-describe('Calculator', () => {
-  it('should pass a sample test case', () => {
-    expect(true).toBe(true);
+  
+  describe('Calculator', () => {
+    it('should pass a sample test case', () => {
+      expect(Calculator()).toBe('// add expected output here//');
+    });
+  
+    // TODO: Add more test cases for 'Calculator'
   });
-
-  // TODO: Add more test cases for 'Calculator'
-});
-
-describe('multiply', () => {
-  it('should pass a sample test case', () => {
-const calculator = new Calculator();
-    expect(calculator.multiply(2, 2)).toBe(4)
+  
+  describe('multiply', () => {
+    it('should pass a sample test case', () => {
+      const instance = new Calculator();
+    expect(instance.multiply(1, 1)).toBe('// add expected output here//');
+    });
+  
+    // TODO: Add more test cases for 'multiply'
   });
-
-  // TODO: Add more test cases for 'multiply'
-});
+  

@@ -1,26 +1,43 @@
 import ts from 'typescript';
 import { CodeSection } from './CodeAnalyzer';
-
+import CodeAnalyzer from './CodeAnalyzer';
 class TestGenerator {
-  public generateTestCases(codeSections: CodeSection[]): string {
+  public generateTestCases(codeSections: CodeSection[], codeAnalyzer: CodeAnalyzer): string {
     let testCases = '';
-
+  
     codeSections.forEach((section) => {
       const functionName = section.name;
+      const sampleInputs = this.generateSampleInputs(section.node);
+      let methodCall: string;
+  
+      if (ts.isMethodDeclaration(section.node)) {
+        const className = codeAnalyzer.getClassName(section.node);
+        if (className) {
+          methodCall = `const instance = new ${className}();\n    expect(instance.${functionName}(${sampleInputs})).toBe('// add expected output here//');`;
+        } else {
+          methodCall = `expect(${functionName}(${sampleInputs})).toBe('// add expected output here//');`;
+        }
+      } else {
+        methodCall = `expect(${functionName}(${sampleInputs})).toBe('// add expected output here//');`;
+      }
+  
       const testCase = `
-describe('${functionName}', () => {
-  it('should pass a sample test case', () => {
-    expect(true).toBe(true);
+  describe('${functionName}', () => {
+    it('should pass a sample test case', () => {
+      ${methodCall}
+    });
+  
+    // TODO: Add more test cases for '${functionName}'
   });
-
-  // TODO: Add more test cases for '${functionName}'
-});
-`;
+  `;
       testCases += testCase;
     });
-
+  
     return testCases;
   }
+  
+  
+  
 
 public saveTestCasesToFile(testCases: string, sourceFilePath: string, outputFilePath: string, codeSections: CodeSection[]): void {
   const imports = this.extractExports(codeSections).join(', ');
@@ -52,6 +69,37 @@ private getRelativeImportPath(sourceFilePath: string, outputFilePath: string): s
   const importPath = require('path').join(relativePath, sourceFileBaseName);
   return importPath.replace(/\\/g, '/');
 }
+private generateSampleInputs(node: ts.Node): string {
+  if (
+    !(
+      ts.isFunctionDeclaration(node) ||
+      ts.isMethodDeclaration(node) ||
+      ts.isArrowFunction(node)
+    )
+  ) {
+    return '';
+  }
+
+  const params = node.parameters.map((param) => {
+    const paramType = param.type;
+    if (paramType) {
+      if (paramType.kind === ts.SyntaxKind.NumberKeyword) {
+        return '1';
+      } else if (paramType.kind === ts.SyntaxKind.StringKeyword) {
+        return "'sample'";
+      } else if (paramType.kind === ts.SyntaxKind.BooleanKeyword) {
+        return 'true';
+      }
+    }
+    return 'null';
+  });
+
+  return params.join(', ');
+}
+
+
+
+
 
 }
 

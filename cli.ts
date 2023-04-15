@@ -40,7 +40,7 @@ const codeAnalyzer = new CodeAnalyzer(fileContent);
 const codeSections = codeAnalyzer.analyze();
 
 const testGenerator = new TestGenerator();
-const testCases = testGenerator.generateTestCases(codeSections);
+const testCases = testGenerator.generateTestCases(codeSections, codeAnalyzer);
 
 const testFileName = path.basename(inputFile, path.extname(inputFile)) + '.test.ts';
 const testFilePath = path.join(outputDir, testFileName);

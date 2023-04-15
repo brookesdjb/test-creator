@@ -9,7 +9,7 @@ const codeAnalyzer = new CodeAnalyzer(fileContent);
 const codeSections = codeAnalyzer.analyze();
 
 const testGenerator = new TestGenerator();
-const testCases = testGenerator.generateTestCases(codeSections);
+const testCases = testGenerator.generateTestCases(codeSections, codeAnalyzer);
 console.log(`Generated test cases for the file '${filePath}':\n${testCases}`);
 
 const outputFilePath = './src/sample.test.ts';
