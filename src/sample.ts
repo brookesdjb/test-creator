@@ -27,3 +27,12 @@ export class Calculator {
     return a * b;
   }
 }
+export async function getUsers(id?:number): Promise<User[]> {
+try{
+  const newUsers = await fetch('https://jsonplaceholder.typicode.com/users')
+  return newUsers.json();
+}
+catch(err){
+  throw err;
+
+}}

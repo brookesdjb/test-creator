@@ -4,7 +4,7 @@ import CodeAnalyzer from './CodeAnalyzer';
 class TestGenerator {
   public generateTestCases(codeSections: CodeSection[], codeAnalyzer: CodeAnalyzer): string {
     let testCases = '';
-  
+
     codeSections.forEach((section) => {
       const functionName = section.name;
       let testCase: string;
@@ -15,16 +15,16 @@ class TestGenerator {
         const inputScenarios = this.getInputScenarios(section.node);
         testCase = this.generateFunctionTestCases(functionName, codeAnalyzer, inputScenarios, section.node);
       }
-      
+
       testCases += testCase;
     });
-  
+
     return testCases;
   }
-  
-  
-  
-  
+
+
+
+
 
   private generateFunctionTestCases(
     functionName: string,
@@ -34,25 +34,27 @@ class TestGenerator {
   ): string {
     const scenarios = inputScenarios.map((inputs, index) => {
       const inputsString = inputs
-      .map((input) => (typeof input === 'object' ? JSON.stringify(input) : (typeof input === 'string' ? `'${input}'` : input)))
-      .join(', ');
+        .map((input) => (typeof input === 'object' ? JSON.stringify(input) : (typeof input === 'string' ? `'${input}'` : input)))
+        .join(', ');
       let methodCall: string;
+      const isAsync = ts.isFunctionDeclaration(node) && node.modifiers && node.modifiers.some((modifier) => modifier.kind === ts.SyntaxKind.AsyncKeyword);
+      const uniqueId = this.generateUniqueId(6);
   
       if (ts.isClassDeclaration(node)) {
         methodCall = `const instance = new ${functionName}(${inputsString});\n    expect(instance).toBeInstanceOf(${functionName});`;
       } else if (ts.isMethodDeclaration(node)) {
         const className = codeAnalyzer.getClassName(node);
         if (className) {
-          methodCall = `const instance = new ${className}();\n    expect(instance.${functionName}(${inputsString})).toBe('// add expected output here//');`;
+          methodCall = `const instance = new ${className}();\n    expect(${isAsync ? 'await ' : ''}instance.${functionName}(${inputsString})).toBe('testOutput_${uniqueId}');`;
         } else {
-          methodCall = `expect(${functionName}(${inputsString})).toBe('// add expected output here//');`;
+          methodCall = `expect(${isAsync ? 'await ' : ''}${functionName}(${inputsString})).toBe('testOutput_${uniqueId}');`;
         }
       } else {
-        methodCall = `expect(${functionName}(${inputsString})).toBe('// add expected output here//');`;
+        methodCall = `expect(${isAsync ? 'await ' : ''}${functionName}(${inputsString})).toBe('testOutput_${uniqueId}');`;
       }
   
       return `
-    it('should pass test case ${index + 1}', () => {
+    it('should pass test case ${index + 1}', ${isAsync ? 'async ' : ''}() => {
       ${methodCall}
     });`;
     });
@@ -63,8 +65,10 @@ class TestGenerator {
     // TODO: Add more test cases for '${functionName}'
   });
   `;
-  }
+}
+
   
+
 
   private getInputScenarios(node: ts.Node): any[][] {
     if (
@@ -76,9 +80,9 @@ class TestGenerator {
     ) {
       return [[]];
     }
-  
+
     const scenarios: any[][] = [];
-  
+
     node.parameters.forEach((param) => {
       const paramType = param.type;
       if (paramType) {
@@ -98,10 +102,10 @@ class TestGenerator {
         scenarios.push([null]);
       }
     });
-  
+
     return this.generateCartesianProduct(scenarios);
   }
-  
+
   private generateObjectScenarios(typeName: string): any[] {
     // Customize this function to generate input scenarios for custom types.
     switch (typeName) {
@@ -119,7 +123,7 @@ class TestGenerator {
         return [{}];
     }
   }
-  
+
   private generateCartesianProduct(arrays: any[][]): any[][] {
     return arrays.reduce(
       (acc, array) =>
@@ -127,79 +131,48 @@ class TestGenerator {
       [[]]
     );
   }
-  
-public saveTestCasesToFile(testCases: string, sourceFilePath: string, outputFilePath: string, codeSections: CodeSection[]): void {
-  const imports = this.extractExports(codeSections).join(', ');
-  const fileHeader = `
+
+  public saveTestCasesToFile(testCases: string, sourceFilePath: string, outputFilePath: string, codeSections: CodeSection[]): void {
+    const imports = this.extractExports(codeSections).join(', ');
+    const fileHeader = `
 import { ${imports} } from './${this.getRelativeImportPath(sourceFilePath, outputFilePath)}';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 `;
-  const fileContent = fileHeader + testCases;
-  require('fs').writeFileSync(outputFilePath, fileContent, 'utf-8');
-}
-
-private extractExports(codeSections: CodeSection[]): string[] {
-  const exports: string[] = [];
-  codeSections.forEach((section) => {
-    // Include enums in the imports, along with functions and classes
-    if (
-      ts.isFunctionDeclaration(section.node) ||
-      ts.isClassDeclaration(section.node) ||
-      ts.isEnumDeclaration(section.node)
-    ) {
-      exports.push(section.name);
-    }
-  });
-  return exports;
-}
-
-private getRelativeImportPath(sourceFilePath: string, outputFilePath: string): string {
-  const sourceDir = require('path').dirname(sourceFilePath);
-  const outputDir = require('path').dirname(outputFilePath);
-  const relativePath = require('path').relative(outputDir, sourceDir);
-  const sourceFileBaseName = require('path').basename(sourceFilePath, '.ts');
-  const importPath = require('path').join(relativePath, sourceFileBaseName);
-  return importPath.replace(/\\/g, '/');
-}
-
-
-private generateSampleInputs(node: ts.Node): string {
-  if (
-    !(
-      ts.isFunctionDeclaration(node) ||
-      ts.isMethodDeclaration(node) ||
-      ts.isArrowFunction(node)
-    )
-  ) {
-    return '';
+    const fileContent = fileHeader + testCases;
+    require('fs').writeFileSync(outputFilePath, fileContent, 'utf-8');
   }
 
-  const params = node.parameters.map((param) => {
-    const paramType = param.type;
-    if (paramType) {
-      if (paramType.kind === ts.SyntaxKind.NumberKeyword) {
-        return '1';
-      } else if (paramType.kind === ts.SyntaxKind.StringKeyword) {
-        return "'sample'";
-      } else if (paramType.kind === ts.SyntaxKind.BooleanKeyword) {
-        return 'true';
-      } else if (ts.isTypeReferenceNode(paramType)) {
-        const typeName = paramType.typeName.getText();
-        return this.generateSampleObject(typeName);
+  private extractExports(codeSections: CodeSection[]): string[] {
+    const exports: string[] = [];
+    codeSections.forEach((section) => {
+      // Include enums in the imports, along with functions and classes
+      if (
+        ts.isFunctionDeclaration(section.node) ||
+        ts.isClassDeclaration(section.node) ||
+        ts.isEnumDeclaration(section.node)
+      ) {
+        exports.push(section.name);
       }
-    }
-    return 'null';
-  });
+    });
+    return exports;
+  }
 
-  return params.join(', ');
-}
-private generateEnumTestCase(enumName: string, enumNode: ts.EnumDeclaration): string {
-  const enumValues = enumNode.members
-    .map((member) => `${enumName}.${member.name.getText()}`)
-    .join(', ');
+  private getRelativeImportPath(sourceFilePath: string, outputFilePath: string): string {
+    const sourceDir = require('path').dirname(sourceFilePath);
+    const outputDir = require('path').dirname(outputFilePath);
+    const relativePath = require('path').relative(outputDir, sourceDir);
+    const sourceFileBaseName = require('path').basename(sourceFilePath, '.ts');
+    const importPath = require('path').join(relativePath, sourceFileBaseName);
+    return importPath.replace(/\\/g, '/');
+  }
 
-  return `
+  private generateEnumTestCase(enumName: string, enumNode: ts.EnumDeclaration): string {
+    const enumValues = enumNode.members
+      .map((member) => `${enumName}.${member.name.getText()}`)
+      .join(', ');
+
+    return `
 describe('${enumName}', () => {
   it('should have the expected enum values', () => {
     const expectedValues = [${enumValues}];
@@ -209,18 +182,18 @@ describe('${enumName}', () => {
   // TODO: Add more test cases for '${enumName}'
 });
 `;
-}
-private generateSampleObject(typeName: string): string {
-  // You can customize this function to generate sample objects based on type names.
-  // The sample code below demonstrates generating objects for some custom types.
-  switch (typeName) {
-    case 'User':
-      return `{ id: 1, name: 'John Doe', email: 'john.doe@example.com' }`;
-    case 'Point':
-      return `{ x: 10, y: 20 }`;
-    default:
-      return '{}';
   }
+
+  private generateUniqueId(length: number): string {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    let result = '';
+
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+
+    return result;
 }
 
 }
